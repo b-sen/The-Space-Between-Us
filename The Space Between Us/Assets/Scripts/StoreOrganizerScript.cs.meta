@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: efe1e0e333c6f8a4fb789a2d39561fc1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - floor: {fileID: 6046326280012707474, guid: aef4fea165b7b4945bb08e4e60ab812e, type: 3}
+  - aisleShelf: {fileID: 4267495960874498893, guid: eba5f8f7a6fea434697ac91c8af44778,
+      type: 3}
+  - checkout: {fileID: 3508922806236583354, guid: 1b9b26c8c334ed04fa976ed04f0c26c9,
+      type: 3}
+  - staffFloor: {fileID: 6510802989439764444, guid: 16ec5e0369bdad748a58b7338c731692,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

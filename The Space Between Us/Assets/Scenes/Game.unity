@@ -174,7 +174,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 30
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -203,4 +203,104 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1836872704
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1836872706}
+  - component: {fileID: 1836872705}
+  m_Layer: 0
+  m_Name: StoreManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1836872705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1836872704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efe1e0e333c6f8a4fb789a2d39561fc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  storeArea:
+    serializedVersion: 2
+    x: -40
+    y: -10
+    width: 80
+    height: 40
+  aisleArea:
+    serializedVersion: 2
+    x: -40
+    y: 0
+    width: 80
+    height: 20
+  aisleShelfWidth: 0.5
+  aisleShelfHeight: 14
+  aislePairSpace: 3
+  aisleTopSpace: 3
+  aisleMidSpace: 4
+  aisleBottomSpace: 3
+  maxAisleRows: 3
+  maxAislePairColumns: 30
+  checkoutArea:
+    serializedVersion: 2
+    x: -40
+    y: -10
+    width: 60
+    height: 10
+  checkoutWidth: 1
+  checkoutHeight: 3
+  checkoutBetweenSpace: 1.5
+  checkoutTopSpace: 2
+  checkoutBottomSpace: 2
+  maxCheckoutLanes: 20
+  entrances:
+  - serializedVersion: 2
+    x: 20
+    y: -10
+    width: 20
+    height: 0
+  lobbies:
+  - serializedVersion: 2
+    x: 20
+    y: -10
+    width: 20
+    height: 10
+  staffArea:
+    serializedVersion: 2
+    x: -40
+    y: 20
+    width: 80
+    height: 10
+  floor: {fileID: 6046326280012707474, guid: aef4fea165b7b4945bb08e4e60ab812e, type: 3}
+  aisleShelf: {fileID: 4267495960874498893, guid: eba5f8f7a6fea434697ac91c8af44778,
+    type: 3}
+  checkout: {fileID: 3508922806236583354, guid: 1b9b26c8c334ed04fa976ed04f0c26c9,
+    type: 3}
+  staffFloor: {fileID: 6510802989439764444, guid: 16ec5e0369bdad748a58b7338c731692,
+    type: 3}
+--- !u!4 &1836872706
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1836872704}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
