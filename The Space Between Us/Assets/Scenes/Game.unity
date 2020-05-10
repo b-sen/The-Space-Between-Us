@@ -261,7 +261,7 @@ MonoBehaviour:
     height: 10
   checkoutWidth: 1
   checkoutHeight: 3
-  checkoutBetweenSpace: 1.5
+  checkoutBetweenSpace: 2
   checkoutTopSpace: 2
   checkoutBottomSpace: 2
   maxCheckoutLanes: 20
