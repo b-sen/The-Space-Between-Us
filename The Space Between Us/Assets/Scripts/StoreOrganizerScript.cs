@@ -2,7 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+
 using UnityEngine;
+
+using NavGraph;
 
 /*
  * This script handles the store layout and the navigational graph based on 
@@ -61,11 +64,22 @@ public class StoreOrganizerScript : MonoBehaviour
 
 
     // Generated items based on the store layout parameters.
+    // Arrays and HashSets over Lists for performance, as these will be generated once and then accessed frequently.
     private int numAisleRows;
     private int numAislePairColumns;
     private GameObject[,] aisles;
     private int numCheckouts;
     private GameObject[] checkouts;
+    private HashSet<Zone> allShopperZones;  // the whole customer-accessible graph, in case of "eep I'm lost"
+    private Zone outside;  // special zone where customers come from and return to
+    private Zone lobby;
+    private Zone checkoutTop;
+    private Zone checkoutBottom;
+    private Zone[] checkoutLanes;
+    private Zone aisleTop;
+    private Zone aisleBottom;
+    private Zone[] aisleMids;
+    private Zone[,] aislePairs;
 
 
     // Initialize the store layout and make the navigational graph.
@@ -86,18 +100,32 @@ public class StoreOrganizerScript : MonoBehaviour
             maxCheckoutLanes);
         UnityEngine.Debug.Assert((numCheckouts > 0), "Config ERROR: Checkout area width too small!");
 
-        float checkoutYPosition = checkoutArea.y + checkoutBottomSpace;  // remember, Y increases upwards
+        float checkoutYPosition = checkoutArea.y + checkoutBottomSpace;  // remember, Y increases upwards so it is convenient to start from the bottom and work upwards
         checkouts = new GameObject[numCheckouts];  // automatically initializes to null
+        checkoutLanes = new Zone[numCheckouts];  // likewise
         for (int currentCheckout = 0; currentCheckout < numCheckouts; currentCheckout++)  // for each checkout in the row
         {
             float laneXPosition = checkoutArea.x + currentCheckout * (checkoutBetweenSpace + checkoutWidth);  // shift over by the number of preexisting lanes
-            // TODO: add lane to navigational graph
+            checkoutLanes[currentCheckout] = new Zone("checkout lane " + currentCheckout.ToString(), new Rect(laneXPosition, checkoutYPosition, checkoutBetweenSpace, checkoutHeight)); // add lane to navigational graph
             float checkoutXPosition = laneXPosition + checkoutBetweenSpace;
             checkouts[currentCheckout] = Instantiate(checkout, new Vector2(checkoutXPosition, checkoutYPosition), Quaternion.identity);
             checkouts[currentCheckout].transform.localScale = new Vector2(checkoutWidth, checkoutHeight);
         }
-        // TODO: add top and bottom checkout zones to navigational graph
-        // TODO: add edges within checkout area to navigational graph
+
+        // add top and bottom checkout zones to navigational graph
+        checkoutBottom = new Zone("zone below checkouts", new Rect(checkoutArea.x, checkoutArea.y, checkoutArea.width, checkoutBottomSpace));
+        checkoutTop = new Zone("zone above checkouts", new Rect(checkoutArea.x, checkoutYPosition + checkoutHeight, checkoutArea.width, checkoutArea.height - checkoutHeight - checkoutBottomSpace));
+        
+        // add edges within checkout area to navigational graph
+        foreach (Zone lane in checkoutLanes)
+        {
+            // each checkout lane joins to the top and bottom zones and nowhere else
+            Rect topEdge = new Rect(lane.area.x, lane.area.yMax, lane.area.width, 0);
+            Rect bottomEdge = new Rect(lane.area.x, lane.area.yMin, lane.area.width, 0);
+            Zone.AddEdgeBetweenZones(topEdge, lane, checkoutTop);
+            Zone.AddEdgeBetweenZones(bottomEdge, lane, checkoutBottom);
+        }
+        // all other edges attached to the checkout top and bottom are in other regions, so will be added further down when regions are connected
 
         // aisles follow the same principles as checkouts, but can have multiple rows (we build one row at a time)
         UnityEngine.Debug.Assert((aisleArea.height + MathConstants.floatTolerance) >= (aisleTopSpace + aisleShelfHeight + aisleBottomSpace), "Config ERROR: Aisle area height too small!");
@@ -107,8 +135,10 @@ public class StoreOrganizerScript : MonoBehaviour
             maxAislePairColumns);
         UnityEngine.Debug.Assert((numAislePairColumns > 0), "Config ERROR: Aisle area width too small!");
 
-        // TODO: add bottom aisle zone to navigational graph
+        aisleBottom = new Zone("zone below aisles", new Rect(aisleArea.x, aisleArea.y, aisleArea.width, aisleBottomSpace));  // add bottom aisle zone to navigational graph
         aisles = new GameObject[numAisleRows, 2 * numAislePairColumns];  // automatically initializes to null
+        aislePairs = new Zone[numAisleRows, numAislePairColumns];  // likewise
+        aisleMids = new Zone[numAisleRows - 1];  // as with row calculation, 1 less middle space than we have rows
         float aisleRowYPosition = aisleArea.y + aisleBottomSpace;  // remember, Y increases upwards
         for (int currentAisleRow = 0; currentAisleRow < numAisleRows; currentAisleRow++)  // for each row of aisles
         {
@@ -118,22 +148,76 @@ public class StoreOrganizerScript : MonoBehaviour
                 // left side of pair
                 aisles[currentAisleRow, 2 * currentAislePairColumn] = Instantiate(aisleShelf, new Vector2(pairXPosition, aisleRowYPosition), Quaternion.identity);
                 aisles[currentAisleRow, 2 * currentAislePairColumn].transform.localScale = new Vector2(aisleShelfWidth, aisleShelfHeight);
-                // TODO: add space between pairs to navigational graph
+                // add space between pairs to navigational graph
+                aislePairs[currentAisleRow, currentAislePairColumn] = new Zone("aisle pair " + currentAislePairColumn.ToString() + " in row " + currentAisleRow.ToString(), 
+                    new Rect(pairXPosition + aisleShelfWidth, aisleRowYPosition, aislePairSpace, aisleShelfHeight));
                 // right side of pair
                 aisles[currentAisleRow, 2 * currentAislePairColumn + 1] = 
                     Instantiate(aisleShelf, new Vector2(pairXPosition + aisleShelfWidth + aislePairSpace, aisleRowYPosition), Quaternion.identity);
                 aisles[currentAisleRow, 2 * currentAislePairColumn + 1].transform.localScale = new Vector2(aisleShelfWidth, aisleShelfHeight);
             }
 
-            // TODO: add edges between this row of aisles and the space below in the navigational graph
-            // TODO: if this row is not the last, add the middle space to the navigational graph
-            // TODO: if this row is the last, add the top space to the navigational graph
-            // TODO: add edges between this row of aisles and the space above in the navigational graph
+            bool isLastRow = (currentAisleRow == (numAisleRows - 1));
+
+            if (isLastRow)
+            {
+                // if this row is the last, add the top space to the navigational graph
+                aisleTop = new Zone("zone above aisles", new Rect(aisleArea.x, aisleRowYPosition + aisleShelfHeight, aisleArea.width, aisleArea.yMax - (aisleRowYPosition + aisleShelfHeight)));
+            } else
+            {
+                // if this row is not the last, add the middle space to the navigational graph
+                aisleMids[currentAisleRow] = new Zone("middle zone above aisle row" + currentAisleRow.ToString(), 
+                    new Rect(aisleArea.x, aisleRowYPosition + aisleShelfHeight, aisleArea.width, aisleMidSpace));
+            }
+
+            bool isFirstRow = (currentAisleRow == 0);
+            // add edges between this row of aisles and other zones in the navigational graph
+            for (int currentAislePairColumn = 0; currentAislePairColumn < numAislePairColumns; currentAislePairColumn++)  // can't naturally foreach just one row
+            {
+                Zone aislePair = aislePairs[currentAisleRow, currentAislePairColumn];
+                // each space between a pair of aisles joins to the zones below and above and nowhere else
+                Rect topEdge = new Rect(aislePair.area.x, aislePair.area.yMax, aislePair.area.width, 0);
+                Rect bottomEdge = new Rect(aislePair.area.x, aislePair.area.yMin, aislePair.area.width, 0);
+                if (isLastRow) { Zone.AddEdgeBetweenZones(topEdge, aislePair, aisleTop); } 
+                else { Zone.AddEdgeBetweenZones(topEdge, aislePair, aisleMids[currentAisleRow]); }
+                if (isFirstRow) { Zone.AddEdgeBetweenZones(bottomEdge, aislePair, aisleBottom); }
+                else { Zone.AddEdgeBetweenZones(bottomEdge, aislePair, aisleMids[currentAisleRow - 1]); }  // the space between rows that the LAST row added above it
+            }
 
             aisleRowYPosition += aisleShelfHeight + aisleMidSpace;  // bump Y upwards for next row
         }
+        
+        lobby = new Zone("lobby", lobbies[0]);  // add lobby to navigational graph, conveniently we already know where it is
+        outside = new Zone("outside", new Rect(lobbies[0].x, lobbies[0].y - lobbies[0].height, lobbies[0].width, lobbies[0].height)); // add outside to navigational graph, taking size of lobby but moved down
 
-        // TODO: add entrance and lobby to navigational graph
+        // connect up regions of navigational graph 
+        Zone.AddEdgeBetweenZones(entrances[0], lobby, outside);  // entrance connects lobby and outside, and is the only way out
+        // to the left of the lobby is the checkouts, adjacent to the top and bottom but not necessarily a lane
+        Rect checkoutTopRightEdge = new Rect(checkoutTop.area.xMax, checkoutTop.area.y, 0, checkoutTop.area.height);
+        Rect checkoutBottomRightEdge = new Rect(checkoutBottom.area.xMax, checkoutBottom.area.y, 0, checkoutBottom.area.height);
+        Zone.AddEdgeBetweenZones(checkoutTopRightEdge, checkoutTop, lobby);
+        Zone.AddEdgeBetweenZones(checkoutBottomRightEdge, checkoutBottom, lobby);
+        // above the lobby is the bottom of the aisles
+        Rect lobbyTopEdge = new Rect(lobby.area.x, lobby.area.yMax, lobby.area.width, 0);
+        Zone.AddEdgeBetweenZones(lobbyTopEdge, aisleBottom, lobby);
+        // above the checkouts is also the bottom of the aisles
+        Rect checkoutTopTopEdge = new Rect(checkoutTop.area.x, checkoutTop.area.yMax, checkoutTop.area.width, 0);
+        Zone.AddEdgeBetweenZones(checkoutTopTopEdge, aisleBottom, checkoutTop);
+
+        // add all regions to HashSet
+        allShopperZones = new HashSet<Zone>();
+        allShopperZones.Add(outside);
+        allShopperZones.Add(lobby);
+        allShopperZones.Add(checkoutTop);
+        allShopperZones.Add(checkoutBottom);
+        allShopperZones.UnionWith(checkoutLanes);  // iterates over automatically
+        allShopperZones.Add(aisleTop);
+        allShopperZones.Add(aisleBottom);
+        allShopperZones.UnionWith(aisleMids);  // iterates over automatically
+        foreach (Zone aislePair in aislePairs)  // automatic iteration handles multidimensional arrays properly, but sadly UnionWith doesn't iterate over multidimensional arrays
+        {
+            allShopperZones.Add(aislePair);
+        }
     }
 
     // Update is called once per frame
