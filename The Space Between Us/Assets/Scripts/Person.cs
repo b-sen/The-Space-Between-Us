@@ -90,9 +90,10 @@ public abstract class Person : MonoBehaviour
         // calculate acceleration towards that velocity
         Vector2 targetAccelerationDirection = targetVelocity - velocity;
         targetAccelerationDirection.Normalize();
+        float frameAccelerationMagnitude = Mathf.Lerp(maxWalkAcceleration, maxBoostAcceleration, boostLevel) * Time.deltaTime;
         // MoveTowards doesn't come in Vector2 form, so accelerate each component individually (scaling by the magnitude of acceleration in that component)
-        velocity.x = Mathf.MoveTowards(velocity.x, targetVelocity.x, Mathf.Lerp(maxWalkAcceleration, maxBoostAcceleration, boostLevel) * Math.Abs(targetAccelerationDirection.x) * Time.deltaTime);
-        velocity.y = Mathf.MoveTowards(velocity.y, targetVelocity.y, Mathf.Lerp(maxWalkAcceleration, maxBoostAcceleration, boostLevel) * Math.Abs(targetAccelerationDirection.y) * Time.deltaTime);
+        velocity.x = Mathf.MoveTowards(velocity.x, targetVelocity.x, Math.Abs(targetAccelerationDirection.x) * frameAccelerationMagnitude);
+        velocity.y = Mathf.MoveTowards(velocity.y, targetVelocity.y, Math.Abs(targetAccelerationDirection.y) * frameAccelerationMagnitude);
 
         // movement for this frame
         transform.Translate(velocity * Time.deltaTime);
