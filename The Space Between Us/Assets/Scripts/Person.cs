@@ -40,7 +40,7 @@ public abstract class Person : MonoBehaviour
 
     // Initialize what we can without additional info from the creating script.
     // CALL THIS from derived classes' Init()!
-    virtual void Init()
+    protected virtual void Init()
     {
         // size requires input from the store, handled in InitSize
 
@@ -53,7 +53,7 @@ public abstract class Person : MonoBehaviour
     }
 
     // CALL THIS from the creating script!
-    void InitSize(float _radius, float _distance)
+    protected void InitSize(float _radius, float _distance)
     {
         radius = _radius;
         physicalDistance = _distance;
@@ -66,7 +66,7 @@ public abstract class Person : MonoBehaviour
     // towards.  Z indicates "panic level" and controls the extent to which 
     // "boost mode" is used, where 0 is no boost and 1 is full boost.  Z  
     // values outside [0,1] will be clamped by the caller.
-    abstract Vector3 GetMovementIntent();  // must return how the character intends to move on a local level - NOT eventual goal point for a task list item!
+    protected abstract Vector3 GetMovementIntent();  // must return how the character intends to move on a local level - NOT eventual goal point for a task list item!
 
     // As with Start(), work that would normally be here is shunted to other functions so derived classes can override them.
     // Will never be called, as this function is private and this class cannot be instantiated.
@@ -75,7 +75,7 @@ public abstract class Person : MonoBehaviour
         doMovementUpdate();
     }
 
-    virtual void doMovementUpdate()
+    protected virtual void doMovementUpdate()
     {
         // split movement intent into direction and panic level
         Vector3 movementIntent = GetMovementIntent();
