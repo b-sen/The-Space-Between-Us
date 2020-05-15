@@ -1,9 +1,20 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Security.Cryptography;
+
 using UnityEngine;
+
+// Make sure to have a sprite to display one's size.
+[RequireComponent(typeof(SpriteRenderer))]
+// Also ASSUMES that the object this is on has a child Bubble with its own 
+// sprite, so as to display the "personal space bubble".
+// ASSUMES that both sprites are circles with 1m radius and origin at the 
+// center (at base transform.localScale), so that they can be resized in code.
+
+// Make sure to have a collider for oneself.
+[RequireComponent(typeof(CircleCollider2D))]
+// ASSUMES that the collider is set up for scaling in the same way as the 
+// sprite used to display one's own size.
 
 
 /* The base for player character and NPC alike.
@@ -58,8 +69,15 @@ public abstract class Person : MonoBehaviour
         radius = _radius;
         physicalDistance = _distance;
 
-        // TODO: display size and "bubble"
-        // TODO: add circle collider
+        // display size and "bubble"
+        transform.localScale = new Vector3(radius, radius, 1);  // rescale to display size, which is safe because this has no parent and all transform manipulation is therefore in world space
+        Transform bubble = transform.Find("Bubble");
+        UnityEngine.Debug.Assert(bubble != null, "Config ERROR: Person lacks child GameObject to display personal space!");
+        float bubbleRescale = (physicalDistance + radius) / radius;  // counteract local scaling of this GameObject and add own size
+        bubble.localScale = new Vector3(bubbleRescale, bubbleRescale, 1);
+
+        // track own circle collider
+        ownCollider = GetComponent<CircleCollider2D>() as Collider2D;
     }
 
     // The X and Y components are taken only to indicate direction to move 
