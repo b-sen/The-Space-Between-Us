@@ -53,7 +53,7 @@ public abstract class Person : MonoBehaviour
     }
 
     // CALL THIS from the creating script!
-    protected void InitSize(float _radius, float _distance)
+    public void InitSize(float _radius, float _distance)
     {
         radius = _radius;
         physicalDistance = _distance;
